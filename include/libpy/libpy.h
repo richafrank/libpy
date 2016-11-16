@@ -5,4 +5,5 @@
 #include "libpy/type.h"
 #include "libpy/list.h"
 #include "libpy/long.h"
+#include "libpy/set.h"
 #include "libpy/utils.h"
