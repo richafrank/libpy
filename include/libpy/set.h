@@ -50,6 +50,21 @@ public:
     py::ssize_t len() const;
 
     /**
+       Add an element to a set.
+
+       @param elem The element to append.
+       @return -1 on failure, otherwise zero.
+    */
+    template<typename T>
+    int add(const T &elem) {
+        if (!pyutils::all_nonnull(*this, elem)) {
+            pyutils::failed_null_check();
+            return -1;
+        }
+        return PySet_Add(*this, elem);
+    }
+
+    /**
        Coerce to a `nonnull` object.
 
        @see nonnull
@@ -112,6 +127,73 @@ inline int checkexact(const T &t) {
 
 inline int checkexact(const nonnull<object>&) {
     return 1;
+}
+}
+
+/**
+   A `py::set::object` where `ob` is known to be nonnull.
+   This is used to skip null checks for performance.
+
+   This class should be used where users want to trade the ability to
+   write a nested expression for perfomance.
+*/
+template<>
+class nonnull<set::object> : public set::object {
+protected:
+    nonnull() = delete;
+    explicit nonnull(PyObject *ob) : set::object(ob) {}
+public:
+    friend class object;
+
+    nonnull(const nonnull &cpfrom) : set::object(cpfrom) {}
+    nonnull(nonnull &&mvfrom) noexcept : set::object(mvfrom.ob) {
+        mvfrom.ob = nullptr;
+    }
+
+    nonnull &operator=(const nonnull &cpfrom) {
+        nonnull<set::object> tmp(cpfrom);
+        return (*this = std::move(tmp));
+    }
+
+    nonnull &operator=(nonnull &&mvfrom) noexcept {
+        ob = mvfrom.ob;
+        mvfrom.ob = nullptr;
+        return *this;
+    }
+
+    /**
+       Get the length of the object.
+
+       This is equivalent to `len(this)`.
+
+       @return The length of the object or -1 if an exception occured.
+    */
+    py::ssize_t len() const {
+        return PySet_GET_SIZE(ob);
+    }
+};
+
+namespace set {
+namespace _tuple_templates{
+#include "libpy/_tuple_templates.h"
+}
+
+/**
+   Pack variadic arguments into a Python `set` object.
+
+   @param elems The elements to pack.
+   @return      The elements packed as a Python `set`.
+*/
+template<typename... Ts>
+tmpref<object> pack(const Ts&... elems) {
+    auto pyargs = _tuple_templates::pack(elems...);
+
+    if (!pyargs.is_nonnull()) {
+        return nullptr;
+    }
+	  object s(pyargs);
+    py::nonnull<object> t = s.as_nonnull();
+    return std::move(t);
 }
 }
 }

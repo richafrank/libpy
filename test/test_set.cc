@@ -1,3 +1,4 @@
+#include <array>
 
 #include "gtest/gtest.h"
 #include <Python.h>
@@ -14,4 +15,18 @@ TEST(Set, type) {
 
     EXPECT_EQ(static_cast<PyObject*>(t.type()),
               reinterpret_cast<PyObject*>(&PySet_Type));
+}
+
+TEST(Set, iteration) {
+    // std::array<py::object, 3> expected({0_p, 1_p, 2_p});
+    auto ob = py::set::pack(0_p, 1_p, 2_p);
+    std::size_t n = 0;
+
+    ASSERT_EQ(ob.len(), 3);
+    for (const auto &e : ob) {
+        ASSERT_TRUE((std::is_same<decltype(e), const py::object&>::value)) <<
+            "const iteration over ob does not yield correct type";
+        n++;
+    }
+    EXPECT_EQ(n, 3u) << "ran through too many iterations";
 }
