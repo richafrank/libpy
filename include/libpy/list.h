@@ -181,6 +181,19 @@ public:
     }
 
     /**
+        Sort a list.
+
+        @return -1 on failure, otherwise zero.
+    */
+    int sort() {
+        if (!is_nonnull()) {
+            pyutils::failed_null_check();
+            return -1;
+        }
+        return PyList_Sort(ob);
+    }
+
+    /**
        Coerce to a `nonnull` object.
 
        @see nonnull
