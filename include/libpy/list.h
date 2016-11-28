@@ -345,7 +345,7 @@ tmpref<object> pack(const Ts&... elems) {
     for (const py::object &elem : { elems... }) {
         m[n++] = elem;
     }
-    return std::move(l);
+    return std::move(m);
 }
 }
 }
